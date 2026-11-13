@@ -4,10 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import TouchControlButton from './TouchControlButton';
 import {
   analyzeSetup,
-  buildEngineerBrief,
-  DEFAULT_SETTINGS,
   DEFAULT_SETUP_ANALYSIS,
-  DRIVER_PRESETS,
   loadCareerStats,
   loadSettings
 } from './setupProfiles';
@@ -24,13 +21,6 @@ const WEATHER_PRESETS = [
   { name: 'STORM', rain: 0.75, fog: 0.0025, sun: 0.85, ambient: 0.42, top: '#1c2833', mid: '#34495e', bot: '#5d6d7e' }
 ];
 
-const SETTING_CONTROLS = [
-  { key: 'maxSpeed', label: 'Top Speed', min: 220, max: 360, step: 5, format: (value) => `${value} km/h` },
-  { key: 'acceleration', label: 'Acceleration', min: 30, max: 100, step: 1, format: (value) => `${value}%` },
-  { key: 'steering', label: 'Steering Response', min: 25, max: 100, step: 1, format: (value) => `${value}%` },
-  { key: 'brakePower', label: 'Brake Power', min: 30, max: 100, step: 1, format: (value) => `${value}%` },
-  { key: 'aiLevel', label: 'AI Difficulty', min: 25, max: 100, step: 1, format: (value) => `${value}%` }
-];
 
 const TRACK_POINTS = [
   [0, 0, 0], [80, 0, 0], [110, 6, -20], [130, 12, -50], [140, 15, -80], [130, 12, -110], [140, 8, -140],
@@ -40,101 +30,37 @@ const TRACK_POINTS = [
 ];
 
 const QUALITY_PRESETS = {
-  low: {
-    label: 'PERFORMANCE',
-    antialias: false,
-    maxPixelRatio: 0.85,
-    minPixelRatio: 0.6,
-    logarithmicDepthBuffer: false,
-    shadowMapEnabled: false,
-    shadowMapSize: 0,
-    rainCount: 260,
-    rainUpdateInterval: 0.05,
-    skyResolution: 256,
-    skySegments: 24,
-    skyUpdateInterval: 0.24,
-    minimapInterval: 0.22,
-    minimapSize: 170,
-    groundSegments: 140,
-    trackSamples: 540,
-    terrainCheckStep: 6,
-    treeCount: 650,
-    barrierStep: 4,
-    smokeCount: 72,
-    sparkCount: 48,
-    grassAnisotropy: 2,
-    wheelSegments: 10,
-    shadowUpdateInterval: 0.3,
-    useDetailedCarModel: false
-  },
-  medium: {
-    label: 'BALANCED',
+  high: {
+    label: 'P1 RACE SPEC',
     antialias: true,
-    maxPixelRatio: 1.05,
-    minPixelRatio: 0.8,
+    maxPixelRatio: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2.0) : 1.5,
+    minPixelRatio: 1.0,
     logarithmicDepthBuffer: false,
     shadowMapEnabled: true,
     shadowMapSize: 1024,
-    rainCount: 700,
-    rainUpdateInterval: 0.033,
+    rainCount: 650,
+    rainUpdateInterval: 0.03,
     skyResolution: 512,
     skySegments: 32,
-    skyUpdateInterval: 0.16,
-    minimapInterval: 0.14,
-    minimapSize: 200,
+    skyUpdateInterval: 0.15,
+    minimapInterval: 0.15,
+    minimapSize: 180,
     groundSegments: 220,
-    trackSamples: 660,
+    trackSamples: 640,
     terrainCheckStep: 5,
-    treeCount: 1200,
+    treeCount: 1100,
     barrierStep: 3,
-    smokeCount: 96,
-    sparkCount: 64,
+    smokeCount: 90,
+    sparkCount: 60,
     grassAnisotropy: 4,
     wheelSegments: 12,
-    shadowUpdateInterval: 0.18,
-    useDetailedCarModel: false
-  },
-  high: {
-    label: 'SHOWCAR',
-    antialias: true,
-    maxPixelRatio: 1.2,
-    minPixelRatio: 0.95,
-    logarithmicDepthBuffer: false,
-    shadowMapEnabled: true,
-    shadowMapSize: 1536,
-    rainCount: 880,
-    rainUpdateInterval: 0.025,
-    skyResolution: 768,
-    skySegments: 40,
-    skyUpdateInterval: 0.12,
-    minimapInterval: 0.12,
-    minimapSize: 220,
-    groundSegments: 260,
-    trackSamples: 720,
-    terrainCheckStep: 4,
-    treeCount: 1450,
-    barrierStep: 2,
-    smokeCount: 112,
-    sparkCount: 80,
-    grassAnisotropy: 8,
-    wheelSegments: 14,
-    shadowUpdateInterval: 0.12,
+    shadowUpdateInterval: 0.15,
     useDetailedCarModel: true
   }
 };
 
 const detectQualityPreset = () => {
-  if (typeof window === 'undefined') return QUALITY_PRESETS.medium;
-  const cores = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 4) : 4;
-  const memory = typeof navigator !== 'undefined' ? (navigator.deviceMemory || 4) : 4;
-  const dpr = window.devicePixelRatio || 1;
-  const smallViewport = window.innerWidth < 1180 || window.innerHeight < 720;
-  const reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (cores <= 6 || memory <= 6 || dpr > 1.5 || smallViewport || reducedMotion) return QUALITY_PRESETS.low;
-  if (cores >= 10 && memory >= 8 && dpr <= 1.3 && window.innerWidth >= 1440 && window.innerHeight >= 860) {
-    return QUALITY_PRESETS.high;
-  }
-  return QUALITY_PRESETS.medium;
+  return QUALITY_PRESETS.high;
 };
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -338,7 +264,7 @@ export default function F1RacingGame() {
     hudMessage: null
   });
 
-  const [settings, setSettings] = useState(loadSettings);
+  const [settings] = useState(loadSettings);
   const settingsRef = useRef(settings);
   const setupAnalysisRef = useRef(DEFAULT_SETUP_ANALYSIS);
 
@@ -348,8 +274,16 @@ export default function F1RacingGame() {
   const [phase, setPhase] = useState('menu');
   const phaseRef = useRef(phase);
 
+  const [showLanding, setShowLanding] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLanding(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [soundOn, setSoundOn] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [sessionId, setSessionId] = useState(0);
   const [result, setResult] = useState(null);
@@ -357,8 +291,6 @@ export default function F1RacingGame() {
   const [isPortrait, setIsPortrait] = useState(false);
   const [dismissOrientationPrompt, setDismissOrientationPrompt] = useState(false);
   const cameraActionRef = useRef(null);
-  const setupAnalysis = analyzeSetup(settings);
-  const engineerBrief = buildEngineerBrief(setupAnalysis, careerStats);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -402,6 +334,7 @@ export default function F1RacingGame() {
     damage: 0,
     weather: 'CLEAR',
     camera: 'CHASE',
+    leaders: [PLAYER_ID, 'VERSTAPPEN', 'NORRIS', 'HAMILTON'],
     slipstream: false,
     offTrack: false,
     message: '',
@@ -507,7 +440,6 @@ export default function F1RacingGame() {
     clearInputs();
     resetHud();
     setResult(null);
-    setShowSettings(false);
     setCountdown(3);
     setPhase('countdown');
     setSessionId((v) => v + 1);
@@ -2344,7 +2276,8 @@ export default function F1RacingGame() {
             profile: raceSetup.preset.shortLabel,
             slipstream: slip > 0.2,
             offTrack,
-            message: hudMessage
+            message: hudMessage,
+            leaders: standingsList.slice(0, 4).map((entry) => entry.id)
           }));
 
           debugStateRef.current = {
@@ -2461,258 +2394,197 @@ export default function F1RacingGame() {
     if (!next) stopAudio();
   };
 
-  const updateSetting = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }));
-  const applyDriverPreset = (preset) => setSettings({ ...preset.settings });
 
   return (
     <div className="f1-root">
       <div ref={containerRef} className="f1-canvas" />
-      <div className="screen-fx" />
 
-      {/* ── Mobile Orientation Banner ── */}
-      {isPortrait && !dismissOrientationPrompt && (
+      {/* ── 5-Second Landing Page (Vertical P1 Artwork) ── */}
+      {showLanding && (
+        <div className="landing-screen" onClick={() => setShowLanding(false)}>
+          <img
+            src="./p1_splash.jpg"
+            alt="P1 Formula 1 Grand Prix"
+            className="landing-image"
+          />
+          <div className="landing-footer">
+            <div className="landing-progress-bar">
+              <div className="landing-progress-fill" />
+            </div>
+            <span className="landing-prompt">TAP ANYWHERE TO ENTER</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Minimal Orientation Prompt ── */}
+      {isPortrait && !dismissOrientationPrompt && !showLanding && (
         <div className="portrait-banner">
-          <span>🏎️ Rotate to Landscape for the optimal P1 racing cockpit!</span>
+          <span>Rotate phone to landscape for optimal racing view</span>
           <button type="button" onClick={() => setDismissOrientationPrompt(true)} aria-label="Dismiss">✕</button>
         </div>
       )}
 
-      {phase === 'menu' && (
-        <div className="menu-overlay">
-          <div className="menu-card">
-            <div className="menu-header-bar">
-              <span className="menu-kicker">CHAMPIONSHIP TELEMETRY</span>
-              <span className="menu-author-badge">CREATED BY SHLOK VIJ</span>
+      {/* ── Minimal Homepage (90% removed, stylish 10% kept) ── */}
+      {phase === 'menu' && !showLanding && (
+        <div className="p1-menu-overlay">
+          <div className="p1-menu-card">
+            {/* Header */}
+            <div className="p1-menu-header">
+              <div className="p1-brand">
+                <span className="p1-logo-badge">P1</span>
+                <span className="p1-brand-title">GRAND PRIX</span>
+              </div>
+              <div className="p1-by-credit">BY SHLOK VIJ</div>
             </div>
 
-            <div className="menu-title-wrap">
-              <h1 className="menu-title">P1</h1>
-              <span className="menu-title-sub">FORMULA 1 GRAND PRIX</span>
-            </div>
+            {/* P1 GRAND PRIX CRAFT (Single option) */}
+            <div className="p1-craft-box">
+              <div className="p1-craft-top">
+                <span className="p1-craft-badge">CHAMPIONSHIP SPEC</span>
+                <span className="p1-craft-num">#1</span>
+              </div>
+              <h2 className="p1-craft-name">P1 GRAND PRIX CRAFT</h2>
+              <div className="p1-craft-car">RED BULL RACING RB20 · BLUE LIVERY</div>
+              <div className="p1-craft-driver">DRIVER: SHLOK VIJ #1</div>
 
-            <div className="menu-car-banner">
-              <div className="car-banner-left">
-                <div className="car-badge-one">1</div>
-                <div>
-                  <div className="car-banner-name">RED BULL RACING RB20 (BLUE SPEC)</div>
-                  <div className="car-banner-desc">Championship Aero Spec · Honda RBPT Power Unit</div>
+              <div className="p1-craft-specs">
+                <div className="craft-spec-item">
+                  <span className="spec-label">POWER</span>
+                  <span className="spec-val">1040 BHP</span>
+                </div>
+                <div className="craft-spec-item">
+                  <span className="spec-label">TOP SPEED</span>
+                  <span className="spec-val">350+ KM/H</span>
+                </div>
+                <div className="craft-spec-item">
+                  <span className="spec-label">DOWNFORCE</span>
+                  <span className="spec-val">GROUND EFFECT</span>
                 </div>
               </div>
-              <div className="car-banner-driver">DRIVER: SHLOK VIJ #1</div>
             </div>
 
-            <p className="menu-subtitle">
-              High-fidelity 3D Formula 1 Simulator created by Shlok Vij. Take the wheel of Red Bull #1 against 6 world-class constructor teams across 5 laps with DRS, ERS energy recovery, dynamic weather, and race telemetry.
-            </p>
-
-            <div className="setup-preset-grid">
-              {DRIVER_PRESETS.map((preset) => {
-                const active = setupAnalysis.preset.id === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={`setup-preset ${active ? 'setup-preset-active' : ''}`}
-                    onClick={() => applyDriverPreset(preset)}
-                  >
-                    <span className="setup-preset-kicker">{preset.callSign}</span>
-                    <strong>{preset.name}</strong>
-                    <span className="setup-preset-copy">{preset.summary}</span>
-                    <div className="setup-traits">
-                      {preset.traits.map((trait) => (
-                        <span key={`${preset.id}-${trait}`} className="setup-trait">{trait}</span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="engineer-brief">
-              <div className="engineer-brief-head">
-                <span className="engineer-kicker">{engineerBrief.eyebrow}</span>
-                <span className="engineer-match">Spec Match {setupAnalysis.matchPct}%</span>
-              </div>
-              <h2 className="engineer-title">{engineerBrief.title}</h2>
-              <p className="engineer-copy">{engineerBrief.copy}</p>
-              <p className="engineer-focus"><strong>Track Note:</strong> {engineerBrief.focus}</p>
-              <div className="engineer-metrics">
-                {engineerBrief.metrics.map((metric) => (
-                  <span key={metric.label} className="engineer-metric">{metric.label} {metric.value}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="menu-controls">
-              <div className="control-block"><span>W / Arrow Up / Gas</span><span>Throttle</span></div>
-              <div className="control-block"><span>S / Arrow Down / Brk</span><span>Brake</span></div>
-              <div className="control-block"><span>A/D or Arrows / Left/Right</span><span>Steer</span></div>
-              <div className="control-block"><span>Shift / F / DRS / ERS</span><span>DRS / ERS Boost</span></div>
-            </div>
-
-            <div className="menu-actions">
-              <button id="start-btn" type="button" className="btn btn-primary" onClick={startRace}>Start Race</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowSettings((v) => !v)}>
-                {showSettings ? 'Hide Fine Tune' : 'Fine Tune Setup'}
+            {/* Start Race Button */}
+            <div className="p1-menu-actions">
+              <button id="start-btn" type="button" className="p1-btn-start" onClick={startRace}>
+                START RACE
               </button>
             </div>
 
-            <div className="career-strip">
-              <div className="career-card">
-                <span className="career-label">Races</span>
-                <strong>{careerStats.races}</strong>
-              </div>
-              <div className="career-card">
-                <span className="career-label">Wins</span>
-                <strong>{careerStats.wins}</strong>
-              </div>
-              <div className="career-card">
-                <span className="career-label">Podiums</span>
-                <strong>{careerStats.podiums}</strong>
-              </div>
-              <div className="career-card">
-                <span className="career-label">Personal Best</span>
-                <strong>{careerStats.bestLap ? formatTime(careerStats.bestLap) : '--:--.---'}</strong>
-              </div>
-            </div>
-
-            {careerStats.recentResults.length > 0 && (
-              <div className="recent-form">
-                <span className="recent-label">Recent Form</span>
-                <div className="recent-list">
-                  {careerStats.recentResults.map((entry) => (
-                    <span key={`${entry.timestamp}-${entry.position}`} className={`recent-pill ${entry.position <= 3 ? 'recent-pill-good' : ''}`}>
-                      P{entry.position} · {entry.weather}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {showSettings && (
-              <div className="settings-panel">
-                <div className="settings-header">
-                  <span>Fine Tune The Car</span>
-                  <strong>{setupAnalysis.preset.name}</strong>
-                </div>
-                {SETTING_CONTROLS.map((control) => (
-                  <div key={control.key} className="setting-row">
-                    <label>{control.label}</label>
-                    <span>{control.format(settings[control.key])}</span>
-                    <input
-                      type="range"
-                      min={control.min}
-                      max={control.max}
-                      step={control.step}
-                      value={settings[control.key]}
-                      onChange={(e) => updateSetting(control.key, Number(e.target.value))}
-                    />
-                  </div>
-                ))}
-                <button type="button" className="btn btn-reset" onClick={() => setSettings(DEFAULT_SETTINGS)}>Reset Setup</button>
-              </div>
-            )}
-
-            <div className="menu-credits-footer">
-              <span>© P1 Grand Prix · Developed by <strong>Shlok Vij</strong></span>
-              <span>Red Bull Racing #1 · Silverstone Circuit</span>
+            {/* Sound & Footer */}
+            <div className="p1-menu-footer">
+              <button type="button" className="p1-sound-btn" onClick={toggleSound}>
+                {soundOn ? 'SOUND: ON' : 'SOUND: OFF'}
+              </button>
+              <span className="p1-footer-tag">FORMULA 1 · BY SHLOK VIJ</span>
             </div>
           </div>
         </div>
       )}
 
-      {phase !== 'menu' && (
+      {/* ── In-Race HUD & Controls ── */}
+      {phase !== 'menu' && !showLanding && (
         <>
-          <div className="top-hud">
-            <div className="top-hud-left">
-              <span className="hud-logo-badge">P1</span>
-              <span id="hud-pos" className="hud-chip gold-chip">P{hud.position}/{hud.competitors}</span>
-              <span id="hud-lap" className="hud-chip">LAP {hud.lap}/{TOTAL_LAPS}</span>
-              <span className="hud-chip">S{hud.sector}</span>
+          {/* Top-Left: F1 Broadcast Timing Tower */}
+          <div className="f1-timing-tower">
+            <div className="f1-tower-header">
+              <span className="f1-red-tag">P1</span>
+              <span className="f1-tower-title">RACE</span>
+              <span className="f1-tower-lap">LAP {hud.lap}/{TOTAL_LAPS}</span>
             </div>
-            <div className="top-hud-right">
-              <span className={`hud-chip ${hud.drsOn ? 'active-chip' : ''}`}>
-                {hud.drsOn ? 'DRS OPEN' : (hud.drsReady ? 'DRS READY' : 'DRS OFF')}
-              </span>
-              <span className={`hud-chip cyan-chip ${hud.ersOn ? 'active-chip' : ''}`}>ERS {hud.ers}%</span>
-              <span className="hud-chip silver-chip">{hud.profile}</span>
+            <div className="f1-tower-list">
+              {(hud.leaders && hud.leaders.length > 0
+                ? hud.leaders
+                : [PLAYER_ID, 'VERSTAPPEN', 'NORRIS', 'HAMILTON']
+              ).slice(0, 4).map((name, idx) => {
+                const isPlayer = name.includes('SHLOK VIJ');
+                return (
+                  <div key={name + idx} className={`f1-tower-row ${isPlayer ? 'f1-row-player' : ''}`}>
+                    <span className="f1-pos">{idx + 1}</span>
+                    <span className="f1-driver">{isPlayer ? 'SHLOK VIJ' : name}</span>
+                    {isPlayer && <span className="f1-car-tag">RB#1</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Top-Right: Telemetry & Controls */}
+          <div className="f1-top-right-box">
+            <div className="f1-pos-badge">
+              <span className="f1-pos-num">P{hud.position}</span>
+              <span className="f1-pos-total">/{hud.competitors}</span>
+            </div>
+            <div className="f1-time-chip">
+              <span className="f1-time-label">LAP</span>
+              <span className="f1-time-val">{formatTime(hud.lapTime)}</span>
+            </div>
+            <div className="f1-util-btns">
               <button
                 type="button"
-                className="hud-chip hud-btn"
+                className="f1-util-btn"
                 onClick={() => cameraActionRef.current?.()}
-                title="Switch Camera (Chase / Cockpit / Broadcast)"
+                title="Switch Camera"
               >
                 CAM: {hud.camera}
               </button>
               <button
                 type="button"
-                className={`hud-chip hud-btn ${showTouchControls ? 'cyan-chip' : ''}`}
-                onClick={() => setShowTouchControls((v) => !v)}
-                title="Toggle on-screen touch controls"
-              >
-                {showTouchControls ? 'TOUCH ON' : 'TOUCH OFF'}
-              </button>
-              <button
-                type="button"
-                className="hud-chip hud-btn gold-chip"
+                className="f1-util-btn"
                 onClick={() => setPhase((prev) => prev === 'racing' ? 'paused' : 'racing')}
-                title="Pause Race"
+                title="Pause"
               >
                 ⏸
               </button>
+              <button
+                type="button"
+                className="f1-util-btn"
+                onClick={toggleSound}
+                title="Toggle Sound"
+              >
+                {soundOn ? '🔊' : '🔇'}
+              </button>
             </div>
           </div>
 
-          <button type="button" className="sound-toggle" onClick={toggleSound} title={soundOn ? 'Sound Off' : 'Sound On'}>
-            {soundOn ? '🔊' : '🔇'}
-          </button>
-
-          <div className="speed-hud">
-            <div id="hud-speed" className="speed-main">{hud.speed}</div>
-            <div className="speed-unit">KM/H</div>
-            <div id="hud-gear" className="gear-block">G{hud.gear}</div>
-            <div className="rpm-wrap">
-              <div className="rpm-bar">
-                <div id="hud-rpm-fill" className="rpm-fill" style={{ width: `${(hud.rpm / 18000) * 100}%` }} />
+          {/* Bottom-Center: F1 Digital Cockpit Dashboard */}
+          <div className="f1-dash">
+            <div className="f1-dash-rpm-bar">
+              <div
+                className="f1-dash-rpm-fill"
+                style={{ width: `${Math.min(100, (hud.rpm / 16000) * 100)}%` }}
+              />
+            </div>
+            <div className="f1-dash-core">
+              <div className="f1-dash-speed">
+                <span className="f1-speed-num">{hud.speed}</span>
+                <span className="f1-speed-unit">KM/H</span>
               </div>
-              <div id="hud-rpm-label" className="rpm-label">{Math.round(hud.rpm / 1000)}K RPM</div>
+              <div className="f1-dash-gear">
+                <span className="f1-gear-label">GEAR</span>
+                <span className="f1-gear-num">{hud.gear}</span>
+              </div>
+              <div className="f1-dash-badges">
+                <div className={`f1-drs-badge ${hud.drsOn ? 'f1-drs-on' : (hud.drsReady ? 'f1-drs-ready' : '')}`}>
+                  DRS
+                </div>
+                <div className={`f1-ers-badge ${hud.ersOn ? 'f1-ers-on' : ''}`}>
+                  ERS {hud.ers}%
+                </div>
+              </div>
             </div>
-          </div>
-
-          <div className="timer-hud">
-            <div><label>Lap Time</label><strong id="hud-lap-time">{formatTime(hud.lapTime)}</strong></div>
-            <div><label>Race Time</label><strong id="hud-race-time">{formatTime(hud.raceTime)}</strong></div>
-            <div><label>Best</label><strong>{hud.bestLap ? formatTime(hud.bestLap) : '--:--.---'}</strong></div>
-            <div className="sectors">
-              {hud.sectors.map((v, i) => (
-                <span key={`sector-${i}`} className={hud.sector === i + 1 ? 'active-sector' : ''}>S{i + 1} {v ? v.toFixed(2) : '--.--'}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="status-strip">
-            <span className={hud.slipstream ? 'accent-green' : ''}>Slipstream: {hud.slipstream ? 'ON' : 'OFF'}</span>
-            <span className={hud.offTrack ? 'accent-red' : ''}>Track: {hud.offTrack ? 'OFF' : 'ON'}</span>
-            <span className={hud.flow > 80 ? 'accent-green' : (hud.flow < 50 ? 'accent-yellow' : '')}>Flow: {hud.flow}%</span>
-            <span className={hud.damage > 45 ? 'accent-red' : (hud.damage > 22 ? 'accent-yellow' : '')}>Damage: {hud.damage}%</span>
-            <span>Weather: {hud.weather}</span>
-            <span id="hud-fps">FPS: {hud.fps}</span>
           </div>
 
           {hud.message && <div className="event-banner">{hud.message}</div>}
 
           <div ref={minimapRef} className="minimap-shell" />
 
-          <div className="controls-strip">
-            <span>WASD / Arrows Drive</span><span>Shift DRS</span><span>F ERS</span><span>Space Drift</span><span>B Pit Repair</span><span>C Camera</span><span>Esc Pause</span>
-          </div>
-
-          {/* ── Mobile Touch Controls ── */}
+          {/* ── Mobile Touch Controls (Non-overlapping clusters) ── */}
           {showTouchControls && (
-            <div className="touch-controls">
-              <div className="touch-left-cluster">
+            <div className="f1-touch-controls">
+              {/* Left cluster: Steering */}
+              <div className="f1-touch-left">
                 <TouchControlButton
-                  className="touch-btn touch-steer touch-steer-l"
+                  className="f1-touch-steer f1-steer-left"
                   controlKey="left"
                   keysRef={keysRef}
                   ariaLabel="Steer Left"
@@ -2720,7 +2592,7 @@ export default function F1RacingGame() {
                   ◀
                 </TouchControlButton>
                 <TouchControlButton
-                  className="touch-btn touch-steer touch-steer-r"
+                  className="f1-touch-steer f1-steer-right"
                   controlKey="right"
                   keysRef={keysRef}
                   ariaLabel="Steer Right"
@@ -2729,73 +2601,56 @@ export default function F1RacingGame() {
                 </TouchControlButton>
               </div>
 
-              <div className="touch-actions-cluster">
-                <TouchControlButton
-                  className={`touch-btn touch-action touch-drs ${hud.drsReady ? 'touch-drs-ready' : ''} ${hud.drsOn ? 'touch-drs-on' : ''}`}
-                  controlKey="drs"
-                  keysRef={keysRef}
-                  ariaLabel="DRS"
-                >
-                  DRS
-                </TouchControlButton>
-                <TouchControlButton
-                  className={`touch-btn touch-action touch-ers ${hud.ersOn ? 'touch-ers-on' : ''}`}
-                  controlKey="ers"
-                  keysRef={keysRef}
-                  ariaLabel="ERS Boost"
-                >
-                  ERS
-                </TouchControlButton>
-                <button
-                  type="button"
-                  className="touch-btn touch-action touch-cam"
-                  onClick={() => cameraActionRef.current?.()}
-                  aria-label="Switch Camera"
-                >
-                  CAM
-                </button>
-                <button
-                  type="button"
-                  className="touch-btn touch-action touch-pause"
-                  onClick={() => setPhase((p) => p === 'racing' ? 'paused' : 'racing')}
-                  aria-label="Pause"
-                >
-                  ⏸
-                </button>
-              </div>
-
-              <div className="touch-right-cluster">
-                <TouchControlButton
-                  className="touch-btn touch-pedal touch-brake"
-                  controlKey="down"
-                  keysRef={keysRef}
-                  ariaLabel="Brake and Reverse"
-                >
-                  <span>BRAKE</span>
-                  <small>▼</small>
-                </TouchControlButton>
-                <TouchControlButton
-                  className="touch-btn touch-pedal touch-gas"
-                  controlKey="up"
-                  keysRef={keysRef}
-                  ariaLabel="Throttle"
-                >
-                  <span>GAS</span>
-                  <small>▲</small>
-                </TouchControlButton>
+              {/* Right cluster: Aux + Pedals */}
+              <div className="f1-touch-right">
+                <div className="f1-touch-aux">
+                  <TouchControlButton
+                    className={`f1-aux-btn ${hud.drsReady ? 'f1-aux-drs-ready' : ''} ${hud.drsOn ? 'f1-aux-drs-on' : ''}`}
+                    controlKey="drs"
+                    keysRef={keysRef}
+                    ariaLabel="DRS"
+                  >
+                    DRS
+                  </TouchControlButton>
+                  <TouchControlButton
+                    className={`f1-aux-btn ${hud.ersOn ? 'f1-aux-ers-on' : ''}`}
+                    controlKey="ers"
+                    keysRef={keysRef}
+                    ariaLabel="ERS Boost"
+                  >
+                    ERS
+                  </TouchControlButton>
+                </div>
+                <div className="f1-touch-pedals">
+                  <TouchControlButton
+                    className="f1-pedal f1-pedal-brake"
+                    controlKey="down"
+                    keysRef={keysRef}
+                    ariaLabel="Brake and Reverse"
+                  >
+                    <span>BRAKE</span>
+                    <small>▼</small>
+                  </TouchControlButton>
+                  <TouchControlButton
+                    className="f1-pedal f1-pedal-gas"
+                    controlKey="up"
+                    keysRef={keysRef}
+                    ariaLabel="Throttle"
+                  >
+                    <span>GAS</span>
+                    <small>▲</small>
+                  </TouchControlButton>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ── DRS/ERS screen effect overlays ── */}
-          {hud.drsOn && <div className="drs-screen-fx" />}
-          {hud.ersOn && <div className="ers-screen-fx" />}
-
+          {/* ── Starting Lights ── */}
           {countdown !== null && (
             <div className="countdown-overlay">
               <div className="starting-lights">
-                {[1, 2, 3].map(n => (
-                  <div key={n} className={`light-col ${countdown !== 'GO' && (4 - countdown) >= n ? 'light-on' : ''} ${countdown === 'GO' ? 'light-go' : ''}`}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div key={n} className={`light-col ${countdown !== 'GO' && (6 - countdown) >= n ? 'light-on' : ''} ${countdown === 'GO' ? 'light-go' : ''}`}>
                     <div className="light-bulb" />
                     <div className="light-bulb" />
                   </div>
@@ -2805,75 +2660,49 @@ export default function F1RacingGame() {
             </div>
           )}
 
+          {/* ── Paused Modal (Black, White, Red) ── */}
           {phase === 'paused' && (
-            <div className="modal-overlay">
-              <div className="modal-card">
-                <h2>P1 GRAND PRIX PAUSED</h2>
-                <p>Formula 1 Simulator Engineered by Shlok Vij · Red Bull Racing #1</p>
-                <div className="modal-actions">
-                  <button type="button" className="btn btn-primary" onClick={() => setPhase('racing')}>Resume</button>
-                  <button type="button" className="btn btn-secondary" onClick={restartRace}>Restart</button>
-                  <button type="button" className="btn btn-ghost" onClick={backToMenu}>Main Menu</button>
+            <div className="p1-modal-overlay">
+              <div className="p1-modal-card">
+                <div className="p1-modal-tag">PAUSED</div>
+                <h2>P1 GRAND PRIX</h2>
+                <p>Red Bull Racing #1 · Driven by Shlok Vij</p>
+                <div className="p1-modal-actions">
+                  <button type="button" className="p1-btn-primary" onClick={() => setPhase('racing')}>RESUME</button>
+                  <button type="button" className="p1-btn-secondary" onClick={restartRace}>RESTART</button>
+                  <button type="button" className="p1-btn-ghost" onClick={backToMenu}>MAIN MENU</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* ── Finished Modal (Black, White, Red) ── */}
           {phase === 'finished' && result && (
-            <div className="modal-overlay finish">
-              <div className="modal-card finish-card">
-                <div className="finish-badge">{result.position === 1 ? '🏆' : `P${result.position}`}</div>
-                <h2>{result.position === 1 ? 'P1 VICTORY!' : result.position <= 3 ? 'P1 PODIUM FINISH!' : 'P1 RACE CLASSIFICATION'}</h2>
-                <p style={{ color: '#ffd100', fontWeight: 'bold', marginBottom: '14px' }}>
-                  {result.position === 1
-                    ? 'Shlok Vij claims victory in the Red Bull #1!'
-                    : `Shlok Vij brings the Red Bull #1 home in P${result.position}!`}
-                </p>
-                <div className="finish-stats">
-                  <div className="stat-block"><span className="stat-label">Position</span><span className="stat-value">{result.position}/{result.standings ? result.standings.length : 7}</span></div>
-                  <div className="stat-block"><span className="stat-label">Total Time</span><span className="stat-value">{formatTime(result.total)}</span></div>
-                  <div className="stat-block"><span className="stat-label">Best Lap</span><span className="stat-value">{result.best ? formatTime(result.best) : '--:--.---'}</span></div>
-                  <div className="stat-block"><span className="stat-label">Weather</span><span className="stat-value">{result.weather}</span></div>
-                  <div className="stat-block"><span className="stat-label">Spec</span><span className="stat-value">{result.setupName || setupAnalysis.preset.name}</span></div>
-                  <div className="stat-block"><span className="stat-label">Peak Flow</span><span className="stat-value">{Number.isFinite(result.flowPeak) ? `${result.flowPeak}%` : '--'}</span></div>
+            <div className="p1-modal-overlay">
+              <div className="p1-modal-card p1-finish-card">
+                <div className="p1-modal-tag">{result.position === 1 ? 'VICTORY' : `P${result.position} FINISH`}</div>
+                <h2>{result.position === 1 ? 'P1 VICTORY' : `CLASSIFICATION: P${result.position}`}</h2>
+                <div className="p1-finish-driver">SHLOK VIJ · RED BULL RACING #1</div>
+                <div className="p1-finish-stats">
+                  <div className="finish-stat"><span className="stat-lbl">POSITION</span><span className="stat-v">P{result.position} / 7</span></div>
+                  <div className="finish-stat"><span className="stat-lbl">TOTAL TIME</span><span className="stat-v">{formatTime(result.total)}</span></div>
+                  <div className="finish-stat"><span className="stat-lbl">BEST LAP</span><span className="stat-v">{result.best ? formatTime(result.best) : '--:--.---'}</span></div>
                 </div>
-                <div className={`finish-callout ${result.isNewBestLap ? 'finish-callout-hot' : ''}`}>
-                  {result.isNewBestLap ? 'New personal best lap.' : `Personal best: ${result.personalBest ? formatTime(result.personalBest) : '--:--.---'}`}
-                </div>
-                {result.career && (
-                  <div className="finish-career-grid">
-                    <div className="career-card">
-                      <span className="career-label">Career Races</span>
-                      <strong>{result.career.races}</strong>
-                    </div>
-                    <div className="career-card">
-                      <span className="career-label">Career Wins</span>
-                      <strong>{result.career.wins}</strong>
-                    </div>
-                    <div className="career-card">
-                      <span className="career-label">Career Podiums</span>
-                      <strong>{result.career.podiums}</strong>
-                    </div>
-                  </div>
-                )}
                 {result.standings && (
-                  <div className="standings-table">
-                    <div className="standings-header">FINAL CLASSIFICATION</div>
-                    {result.standings.map((s, idx) => (
-                      <div key={s.id} className={`standings-row ${s.id === PLAYER_ID ? 'standings-you' : ''}`}>
-                        <span className="standings-pos">{s.position}</span>
-                        <span className="standings-name">{s.id === PLAYER_ID ? '🏆 SHLOK VIJ (Red Bull #1)' : s.id}</span>
-                        <span className="standings-laps">{s.laps} laps</span>
+                  <div className="p1-standings-box">
+                    <div className="p1-standings-hdr">FINAL CLASSIFICATION</div>
+                    {result.standings.map((s) => (
+                      <div key={s.id} className={`p1-standings-row ${s.id === PLAYER_ID ? 'standings-player' : ''}`}>
+                        <span className="s-pos">P{s.position}</span>
+                        <span className="s-name">{s.id === PLAYER_ID ? 'SHLOK VIJ (Red Bull #1)' : s.id}</span>
+                        <span className="s-laps">{s.laps} LAPS</span>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="modal-actions">
-                  <button type="button" className="btn btn-primary" onClick={restartRace}>Race Again</button>
-                  <button type="button" className="btn btn-ghost" onClick={backToMenu}>Menu</button>
-                </div>
-                <div className="finish-creator-credit">
-                  P1 Grand Prix · Developed by <strong>Shlok Vij</strong> · Red Bull Racing #1
+                <div className="p1-modal-actions">
+                  <button type="button" className="p1-btn-primary" onClick={restartRace}>RACE AGAIN</button>
+                  <button type="button" className="p1-btn-ghost" onClick={backToMenu}>MAIN MENU</button>
                 </div>
               </div>
             </div>

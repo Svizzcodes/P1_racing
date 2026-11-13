@@ -1,11 +1,11 @@
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
 export const DEFAULT_SETTINGS = {
-  maxSpeed: 335,
-  acceleration: 75,
-  steering: 65,
-  brakePower: 75,
-  aiLevel: 65
+  maxSpeed: 345,
+  acceleration: 85,
+  steering: 75,
+  brakePower: 82,
+  aiLevel: 75
 };
 
 export const DEFAULT_CAREER_STATS = {
@@ -20,50 +20,18 @@ export const DEFAULT_CAREER_STATS = {
 
 export const DRIVER_PRESETS = [
   {
-    id: 'p1-attack',
-    name: 'P1 QUALIFYING SPEC',
-    shortLabel: 'P1 ATTACK',
-    callSign: 'Red Bull #1 Edge',
-    summary: 'Aggressive aero balance, maximum high-speed stability, and lightning turn-in response for setting the definitive P1 lap.',
-    focus: 'Commit hard into Maggots-Becketts and trust the floor downforce on high-speed entry.',
-    traits: ['aerodynamic bite', 'late braking', 'vmax boost'],
+    id: 'p1-racecraft',
+    name: 'P1 GRAND PRIX CRAFT',
+    shortLabel: 'P1 CRAFT',
+    callSign: 'Red Bull Racing #1',
+    summary: 'Championship Red Bull #1 aerodynamic package with Honda RBPT hybrid unit, dialed for maximum speed and razor turn-in.',
+    focus: 'Direct drive throttle and floor ground-effect downforce.',
+    traits: ['aerodynamic bite', 'ers boost', 'top speed'],
     settings: {
       maxSpeed: 345,
       acceleration: 85,
-      steering: 74,
-      brakePower: 84,
-      aiLevel: 80
-    }
-  },
-  {
-    id: 'p1-racecraft',
-    name: 'P1 GRAND PRIX CRAFT',
-    shortLabel: 'P1 RACECRAFT',
-    callSign: 'Race Pace & Management',
-    summary: 'Optimized energy deployment, progressive throttle curve, and consistent tyre preservation across all 5 stint laps.',
-    focus: 'Protect the front-left on loaded sweeps, manage battery recovery, and strike through DRS zones.',
-    traits: ['tyre endurance', 'ers harvest', 'corner exit'],
-    settings: {
-      maxSpeed: 332,
-      acceleration: 76,
-      steering: 66,
-      brakePower: 78,
-      aiLevel: 72
-    }
-  },
-  {
-    id: 'p1-rain-intel',
-    name: 'P1 WET WEATHER INTEL',
-    shortLabel: 'P1 WET SPEC',
-    callSign: 'Mixed Condition Master',
-    summary: 'Heightened mechanical grip, softened roll resistance, and modulated power delivery for wet and changing tarmac.',
-    focus: 'Smooth inputs on kerbs, patient trail-braking, and let the mechanical grip pull you off the apex.',
-    traits: ['wet grip', 'progressive throttle', 'control'],
-    settings: {
-      maxSpeed: 312,
-      acceleration: 68,
-      steering: 80,
-      brakePower: 86,
+      steering: 75,
+      brakePower: 82,
       aiLevel: 75
     }
   }

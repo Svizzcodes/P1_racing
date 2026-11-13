@@ -714,15 +714,15 @@ export default function F1RacingGame() {
     const gridIndices = [];
     let gidx = 0;
 
-    // Draw grid slots for first 5 cars (0 to 0.015 of the track)
-    for (let k = 0; k < 5; k++) {
-      const gT = k * 0.003;
+    // Starting Grid Markings (7 slots for 7 cars)
+    for (let k = 0; k < 7; k++) {
+      const gT = 0.060 - k * 0.008;
       const rp = curve.getPointAt(gT);
       const rtan = curve.getTangentAt(gT).normalize();
       const rn = new THREE.Vector3(-rtan.z, 0, rtan.x).normalize();
 
       const side = (k % 2 === 0) ? -1 : 1;
-      const offset = TRACK_WIDTH * 0.25 * side;
+      const offset = TRACK_WIDTH * 0.22 * side;
       const center = rp.clone().addScaledVector(rn, offset);
 
       // Slot box
@@ -1158,7 +1158,7 @@ export default function F1RacingGame() {
       tip.position.set(0, 0.2, 3.22);
       car.add(tip);
 
-      // #1 Decal on nose for Shlok Vij Red Bull #1
+      // #1 Decal on nose for Parthiv Abhani Red Bull #1
       if (isPlayer) {
         const badgeCanvas = document.createElement('canvas');
         badgeCanvas.width = 128;
@@ -1399,7 +1399,7 @@ export default function F1RacingGame() {
 
     // Parthiv Abhani Red Bull #1 (Blue Car)
     const player = buildF1Car(rbNavy, quality.shadowMapEnabled, true);
-    const startT = 0.015;
+    const startT = 0.060;
     player.position.copy(curve.getPointAt(startT));
     player.position.y += 0.03;
     let heading = Math.atan2(curve.getTangentAt(startT).x, curve.getTangentAt(startT).z);
@@ -1437,7 +1437,7 @@ export default function F1RacingGame() {
 
     const npcs = npcDefs.map((def, i) => {
       const car = buildF1Car(def.color, quality.shadowMapEnabled, false);
-      const t = (startT - 0.018 * (i + 1) + 1) % 1;
+      const t = startT - 0.008 * (i + 1);
       car.position.copy(curve.getPointAt(t));
       car.position.y += 0.25;
       scene.add(car);
@@ -1447,7 +1447,7 @@ export default function F1RacingGame() {
         t,
         lap: 1,
         speed: 62 + Math.random() * 6,
-        lane: (Math.random() - 0.5) * 3,
+        lane: (i % 2 === 0 ? 1 : -1) * 2.2,
         laneTarget: 0,
         aggression: 0.4 + Math.random() * 0.45,
         seed: Math.random() * 1000
@@ -2114,10 +2114,11 @@ export default function F1RacingGame() {
           if (lap > TOTAL_LAPS) {
             finished = true;
             setPhase('finished');
-            standingsList[0].p = (lap - 1) + pT;
-            npcs.forEach((n, i) => { standingsList[i + 1].p = (n.lap - 1) + n.t; });
-            standingsList.sort((a, b) => b.p - a.p);
-            const finalPosition = standingsList.findIndex((x) => x.id === PLAYER_ID) + 1;
+            const currentStandings = [
+              { id: PLAYER_ID, p: (lap - 1) + pT, isPlayer: true },
+              ...npcs.map((n) => ({ id: n.name, p: (n.lap - 1) + n.t, isPlayer: false }))
+            ].sort((a, b) => b.p - a.p);
+            const finalPosition = currentStandings.findIndex((x) => x.isPlayer) + 1;
             const totalTime = raceStart ? (now - raceStart) / 1000 : 0;
             const currentCareer = careerStatsRef.current;
             const isNewBestLap = bestLap !== null && (currentCareer.bestLap === null || bestLap < currentCareer.bestLap);
@@ -2150,7 +2151,7 @@ export default function F1RacingGame() {
               setupName: raceSetup.preset.name,
               flowPeak: Math.round(peakFlow * 100),
               career: nextCareer,
-              standings: standingsList.map((s, idx) => ({ id: s.id, position: idx + 1, laps: Math.floor(s.p) }))
+              standings: currentStandings.map((s, idx) => ({ id: s.id, position: idx + 1, laps: Math.floor(s.p) }))
             });
           }
 
@@ -2170,10 +2171,24 @@ export default function F1RacingGame() {
           }
         }
 
-        standingsList[0].p = (lap - 1) + pT;
-        npcs.forEach((n, i) => { standingsList[i + 1].p = (n.lap - 1) + n.t; });
-        standingsList.sort((a, b) => b.p - a.p);
-        const pos = standingsList.findIndex((x) => x.id === PLAYER_ID) + 1;
+        const currentStandings = [
+          { id: PLAYER_ID, p: (lap - 1) + pT, isPlayer: true },
+          ...npcs.map((n) => ({ id: n.name, p: (n.lap - 1) + n.t, isPlayer: false }))
+        ].sort((a, b) => b.p - a.p);
+        const pos = currentStandings.findIndex((x) => x.isPlayer) + 1;
+
+        const towerRows = currentStandings.slice(0, 4).map((entry, idx) => ({
+          pos: idx + 1,
+          name: entry.isPlayer ? PLAYER_ID : entry.id,
+          isPlayer: entry.isPlayer
+        }));
+        if (pos > 4) {
+          towerRows[3] = {
+            pos: pos,
+            name: PLAYER_ID,
+            isPlayer: true
+          };
+        }
         const raceTime = raceStart ? (now - raceStart) / 1000 : 0;
         const lapTime = lapStart ? (now - lapStart) / 1000 : 0;
         let hudMessage = '';
@@ -2289,7 +2304,8 @@ export default function F1RacingGame() {
             slipstream: slip > 0.2,
             offTrack,
             message: hudMessage,
-            leaders: standingsList.slice(0, 4).map((entry) => entry.id)
+            towerRows,
+            leaders: currentStandings.slice(0, 4).map((entry) => entry.id)
           }));
 
           debugStateRef.current = {
@@ -2326,7 +2342,7 @@ export default function F1RacingGame() {
               offTrack,
               finished
             },
-            leaders: standingsList.slice(0, 3).map((entry) => ({
+            leaders: currentStandings.slice(0, 3).map((entry) => ({
               id: entry.id,
               progress: Number(entry.p.toFixed(3))
             })),
@@ -2507,15 +2523,20 @@ export default function F1RacingGame() {
               <span>LAPS DONE: <strong>{Math.max(0, hud.lap - 1)}/{TOTAL_LAPS}</strong></span>
             </div>
             <div className="f1-tower-list">
-              {(hud.leaders && hud.leaders.length > 0
-                ? hud.leaders
-                : [PLAYER_ID, 'VERSTAPPEN', 'NORRIS', 'HAMILTON']
-              ).slice(0, 4).map((name, idx) => {
-                const isPlayer = name === PLAYER_ID || name.includes('PARTHIV');
+              {(hud.towerRows && hud.towerRows.length > 0
+                ? hud.towerRows
+                : [
+                    { pos: 1, name: 'PARTHIV ABHANI', isPlayer: true },
+                    { pos: 2, name: 'Ferrari', isPlayer: false },
+                    { pos: 3, name: 'Mercedes', isPlayer: false },
+                    { pos: 4, name: 'McLaren', isPlayer: false }
+                  ]
+              ).map((row, idx) => {
+                const isPlayer = row.isPlayer || row.name === PLAYER_ID || row.name.includes('PARTHIV');
                 return (
-                  <div key={name + idx} className={`f1-tower-row ${isPlayer ? 'f1-row-player' : ''}`}>
-                    <span className="f1-pos">{idx + 1}</span>
-                    <span className="f1-driver">{isPlayer ? 'PARTHIV ABHANI' : name}</span>
+                  <div key={row.name + idx} className={`f1-tower-row ${isPlayer ? 'f1-row-player' : ''}`}>
+                    <span className="f1-pos">{row.pos || idx + 1}</span>
+                    <span className="f1-driver">{isPlayer ? 'PARTHIV ABHANI' : row.name}</span>
                     {isPlayer && <span className="f1-car-tag">RB#1</span>}
                   </div>
                 );

@@ -11,7 +11,7 @@ import {
 import './index.css';
 
 const TOTAL_LAPS = 5;
-const PLAYER_ID = 'SHLOK VIJ #1';
+const PLAYER_ID = 'PARTHIV ABHANI';
 const TRACK_WIDTH = 20;
 const CAMERA_MODES = ['CHASE', 'COCKPIT', 'BROADCAST'];
 const DRS_ZONES = [[0, 0.12], [0.25, 0.39]];
@@ -122,10 +122,18 @@ let detailedCarTemplatePromise = null;
 const loadDetailedCarTemplate = () => {
   if (!detailedCarTemplatePromise) {
     const loader = new GLTFLoader();
-    detailedCarTemplatePromise = loader.loadAsync(`${process.env.PUBLIC_URL}/redbull.glb`)
+    const tryUrls = ['./redbull.glb', 'redbull.glb', '/redbull.glb'];
+    const tryLoad = (idx) => {
+      if (idx >= tryUrls.length) {
+        return Promise.reject(new Error('Failed to load redbull.glb from all paths'));
+      }
+      return loader.loadAsync(tryUrls[idx]).catch(() => tryLoad(idx + 1));
+    };
+    detailedCarTemplatePromise = tryLoad(0)
       .then((gltf) => gltf.scene)
       .catch((error) => {
         detailedCarTemplatePromise = null;
+        console.warn('Could not load redbull.glb:', error);
         throw error;
       });
   }
@@ -1389,7 +1397,7 @@ export default function F1RacingGame() {
       return car;
     };
 
-    // Shlok Vij Red Bull #1 (Blue Car)
+    // Parthiv Abhani Red Bull #1 (Blue Car)
     const player = buildF1Car(rbNavy, quality.shadowMapEnabled, true);
     const startT = 0.015;
     player.position.copy(curve.getPointAt(startT));
@@ -1406,15 +1414,17 @@ export default function F1RacingGame() {
       .then((template) => {
         if (cancelled) return;
         const model = cloneDetailedCar(template, quality.shadowMapEnabled);
-        model.scale.set(3.45, 3.45, 3.45);
+        model.scale.set(5.15, 5.15, 5.15);
         model.rotation.y = -Math.PI / 2;
-        model.position.set(0, 0.05, -0.5);
+        model.position.set(0, 0.08, 0.5);
         if (player.userData.fallbackShell) {
           player.userData.fallbackShell.visible = false;
         }
         player.add(model);
       })
-      .catch(() => { });
+      .catch((err) => {
+        console.warn('Using high-fidelity procedural Red Bull RB20 livery:', err);
+      });
 
     const npcDefs = [
       { name: 'Ferrari', color: 0xd8141f },
@@ -2046,10 +2056,11 @@ export default function F1RacingGame() {
         const vibAmp = (clamp((kmh - 100) / 200, 0, 1) * 0.015) + (rpmNorm * 0.005);
 
         player.children.forEach((child) => {
-          // Identify the loaded GLB model by checking scale (it was set to 3.45)
+          // Identify the loaded GLB model by checking scale (set to ~5.15)
           if (child.type === 'Group' && child.scale.x > 3) {
             child.position.x = (Math.random() - 0.5) * vibAmp;
-            child.position.y = 0.05 + (Math.random() - 0.5) * vibAmp;
+            child.position.y = 0.08 + (Math.random() - 0.5) * vibAmp;
+            child.position.z = 0.5;
           }
         });
 
@@ -2088,10 +2099,11 @@ export default function F1RacingGame() {
         prevT = pT;
         pT = findNearestT(player.position, pT);
 
-        if (racing && prevT > 0.93 && pT < 0.08 && now - lastCross > 7000 && kmh > 70) {
+        const isLineCross = ((prevT > 0.85 && pT < 0.15) || (prevT - pT > 0.7)) && (now - lastCross > 4000);
+        if (racing && isLineCross && (Math.abs(speed) > 2 || kmh > 15)) {
           lastCross = now;
           const lapSecs = lapStart > 0 ? (now - lapStart) / 1000 : 0;
-          if (lap > 1 && lapSecs > 20) bestLap = bestLap === null ? lapSecs : Math.min(bestLap, lapSecs);
+          if (lap > 1 && lapSecs > 15) bestLap = bestLap === null ? lapSecs : Math.min(bestLap, lapSecs);
 
           lap += 1;
           lapStart = now;
@@ -2102,8 +2114,8 @@ export default function F1RacingGame() {
           if (lap > TOTAL_LAPS) {
             finished = true;
             setPhase('finished');
-            standingsList[0].p = lap - 1 + pT;
-            npcs.forEach((n, i) => { standingsList[i + 1].p = n.lap + n.t; });
+            standingsList[0].p = (lap - 1) + pT;
+            npcs.forEach((n, i) => { standingsList[i + 1].p = (n.lap - 1) + n.t; });
             standingsList.sort((a, b) => b.p - a.p);
             const finalPosition = standingsList.findIndex((x) => x.id === PLAYER_ID) + 1;
             const totalTime = raceStart ? (now - raceStart) / 1000 : 0;
@@ -2158,8 +2170,8 @@ export default function F1RacingGame() {
           }
         }
 
-        standingsList[0].p = lap - 1 + pT;
-        npcs.forEach((n, i) => { standingsList[i + 1].p = n.lap + n.t; });
+        standingsList[0].p = (lap - 1) + pT;
+        npcs.forEach((n, i) => { standingsList[i + 1].p = (n.lap - 1) + n.t; });
         standingsList.sort((a, b) => b.p - a.p);
         const pos = standingsList.findIndex((x) => x.id === PLAYER_ID) + 1;
         const raceTime = raceStart ? (now - raceStart) / 1000 : 0;
@@ -2445,7 +2457,7 @@ export default function F1RacingGame() {
               </div>
               <h2 className="p1-craft-name">P1 GRAND PRIX CRAFT</h2>
               <div className="p1-craft-car">RED BULL RACING RB20 · BLUE LIVERY</div>
-              <div className="p1-craft-driver">DRIVER: SHLOK VIJ #1</div>
+              <div className="p1-craft-driver">DRIVER: PARTHIV ABHANI #1</div>
 
               <div className="p1-craft-specs">
                 <div className="craft-spec-item">
@@ -2489,18 +2501,21 @@ export default function F1RacingGame() {
             <div className="f1-tower-header">
               <span className="f1-red-tag">P1</span>
               <span className="f1-tower-title">RACE</span>
-              <span className="f1-tower-lap">LAP {hud.lap}/{TOTAL_LAPS}</span>
+              <span className="f1-tower-lap">LAP {Math.min(hud.lap, TOTAL_LAPS)}/{TOTAL_LAPS}</span>
+            </div>
+            <div className="f1-tower-sub">
+              <span>LAPS DONE: <strong>{Math.max(0, hud.lap - 1)}/{TOTAL_LAPS}</strong></span>
             </div>
             <div className="f1-tower-list">
               {(hud.leaders && hud.leaders.length > 0
                 ? hud.leaders
                 : [PLAYER_ID, 'VERSTAPPEN', 'NORRIS', 'HAMILTON']
               ).slice(0, 4).map((name, idx) => {
-                const isPlayer = name.includes('SHLOK VIJ');
+                const isPlayer = name === PLAYER_ID || name.includes('PARTHIV');
                 return (
                   <div key={name + idx} className={`f1-tower-row ${isPlayer ? 'f1-row-player' : ''}`}>
                     <span className="f1-pos">{idx + 1}</span>
-                    <span className="f1-driver">{isPlayer ? 'SHLOK VIJ' : name}</span>
+                    <span className="f1-driver">{isPlayer ? 'PARTHIV ABHANI' : name}</span>
                     {isPlayer && <span className="f1-car-tag">RB#1</span>}
                   </div>
                 );
@@ -2514,8 +2529,12 @@ export default function F1RacingGame() {
               <span className="f1-pos-num">P{hud.position}</span>
               <span className="f1-pos-total">/{hud.competitors}</span>
             </div>
+            <div className="f1-lap-chip">
+              <span className="f1-lap-label">LAPS DONE</span>
+              <span className="f1-lap-val">{Math.max(0, hud.lap - 1)}/{TOTAL_LAPS}</span>
+            </div>
             <div className="f1-time-chip">
-              <span className="f1-time-label">LAP</span>
+              <span className="f1-time-label">LAP TIME</span>
               <span className="f1-time-val">{formatTime(hud.lapTime)}</span>
             </div>
             <div className="f1-util-btns">
@@ -2666,7 +2685,7 @@ export default function F1RacingGame() {
               <div className="p1-modal-card">
                 <div className="p1-modal-tag">PAUSED</div>
                 <h2>P1 GRAND PRIX</h2>
-                <p>Red Bull Racing #1 · Driven by Shlok Vij</p>
+                <p>Red Bull Racing #1 · Driven by Parthiv Abhani</p>
                 <div className="p1-modal-actions">
                   <button type="button" className="p1-btn-primary" onClick={() => setPhase('racing')}>RESUME</button>
                   <button type="button" className="p1-btn-secondary" onClick={restartRace}>RESTART</button>
@@ -2682,7 +2701,7 @@ export default function F1RacingGame() {
               <div className="p1-modal-card p1-finish-card">
                 <div className="p1-modal-tag">{result.position === 1 ? 'VICTORY' : `P${result.position} FINISH`}</div>
                 <h2>{result.position === 1 ? 'P1 VICTORY' : `CLASSIFICATION: P${result.position}`}</h2>
-                <div className="p1-finish-driver">SHLOK VIJ · RED BULL RACING #1</div>
+                <div className="p1-finish-driver">PARTHIV ABHANI · RED BULL RACING #1</div>
                 <div className="p1-finish-stats">
                   <div className="finish-stat"><span className="stat-lbl">POSITION</span><span className="stat-v">P{result.position} / 7</span></div>
                   <div className="finish-stat"><span className="stat-lbl">TOTAL TIME</span><span className="stat-v">{formatTime(result.total)}</span></div>
@@ -2694,7 +2713,7 @@ export default function F1RacingGame() {
                     {result.standings.map((s) => (
                       <div key={s.id} className={`p1-standings-row ${s.id === PLAYER_ID ? 'standings-player' : ''}`}>
                         <span className="s-pos">P{s.position}</span>
-                        <span className="s-name">{s.id === PLAYER_ID ? 'SHLOK VIJ (Red Bull #1)' : s.id}</span>
+                        <span className="s-name">{s.id === PLAYER_ID ? 'PARTHIV ABHANI (Red Bull #1)' : s.id}</span>
                         <span className="s-laps">{s.laps} LAPS</span>
                       </div>
                     ))}

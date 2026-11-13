@@ -429,6 +429,21 @@ html, body, #root {
   letter-spacing: 0.05em;
 }
 
+.f1-tower-sub {
+  background: #111111;
+  padding: 3px 8px;
+  border-bottom: 1px solid #1a1a1a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #888888;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.f1-tower-sub strong {
+  color: #ffffff;
+}
+
 .f1-tower-list {
   display: flex;
   flex-direction: column;
@@ -512,6 +527,32 @@ html, body, #root {
   font-size: 0.72rem;
   color: #777777;
   font-weight: 700;
+}
+
+.f1-lap-chip {
+  background: #000000;
+  border: 1px solid #242424;
+  border-left: 3px solid #ffffff;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.f1-lap-label {
+  font-size: 0.52rem;
+  color: #777777;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.f1-lap-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.05em;
 }
 
 .f1-time-chip {

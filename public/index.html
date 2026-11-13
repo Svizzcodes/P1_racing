@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230a1628'/><text x='50' y='65' font-family='system-ui, -apple-system, sans-serif' font-weight='900' font-size='50' fill='%2300f0ff' text-anchor='middle'>P1</text><circle cx='80' cy='28' r='7' fill='%23ff1e27'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a1628" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="P1 — High-Performance 3D Formula 1 Simulator created by Shlok Vij. Race the championship Red Bull #1 against elite constructors." />
+    <title>P1 — Formula 1 Racing | By Shlok Vij</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body, #root {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background: #060e1b;
+        font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+      #loader {
+        position: fixed; inset: 0; z-index: 9999;
+        background: radial-gradient(circle at 50% 35%, #132442 0%, #060e1b 75%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        padding: 20px;
+      }
+      #loader.done { opacity: 0; pointer-events: none; }
+      .loader-badge {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 0.35em;
+        color: #00f0ff;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        padding: 4px 12px;
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 999px;
+        background: rgba(0, 240, 255, 0.08);
+      }
+      .loader-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: clamp(3.2rem, 10vw, 5.5rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        background: linear-gradient(180deg, #ffffff 15%, #00f0ff 65%, #ffd100 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.45));
+      }
+      .loader-sub {
+        color: #94b4db;
+        font-size: 0.95rem;
+        letter-spacing: 0.2em;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+      }
+      .loader-author {
+        color: #ffd100;
+        font-size: 0.85rem;
+        letter-spacing: 0.15em;
+        font-weight: 700;
+        margin-bottom: 32px;
+      }
+      .loader-bar-wrap {
+        width: min(280px, 80vw);
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .loader-bar {
+        height: 100%; width: 0%;
+        background: linear-gradient(90deg, #e10600, #ffd100, #00f0ff);
+        border-radius: 99px;
+        animation: loaderPulse 1.4s ease-in-out infinite;
+      }
+      @keyframes loaderPulse { 0% { width: 12%; } 50% { width: 85%; } 100% { width: 12%; } }
+      .loader-car-pill {
+        margin-top: 18px;
+        font-size: 0.78rem;
+        color: #a0c0e0;
+        letter-spacing: 0.1em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .loader-car-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #00f0ff;
+        box-shadow: 0 0 10px #00f0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loader">
+      <div class="loader-badge">SIMULATOR</div>
+      <div class="loader-title">P1</div>
+      <div class="loader-sub">FORMULA 1 GRAND PRIX</div>
+      <div class="loader-author">CREATED BY SHLOK VIJ</div>
+      <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+      <div class="loader-car-pill">
+        <span class="loader-car-dot"></span>
+        <span>RED BULL RACING #1 PREPARING CAR</span>
+      </div>
+    </div>
+    <noscript>Please enable JavaScript to run P1.</noscript>
+    <div id="root"></div>
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var el = document.getElementById('loader');
+          if (el) {
+            el.classList.add('done');
+            setTimeout(function() { if (el) el.remove(); }, 500);
+          }
+        }, 800);
+      });
+    </script>
+  </body>
+</html>
